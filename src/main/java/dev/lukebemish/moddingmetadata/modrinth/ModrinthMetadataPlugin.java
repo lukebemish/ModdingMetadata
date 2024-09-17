@@ -30,6 +30,11 @@ public class ModrinthMetadataPlugin implements Plugin<Object> {
         } else if (target instanceof Settings settings) {
             components = settings.getDependencyResolutionManagement().getComponents();
             projectConfig = action -> settings.getGradle().getLifecycle().beforeProject(action);
+            projectConfig.accept(project -> {
+                var projectComponents = project.getDependencies().getComponents();
+                Consumer<IsolatedAction<Project>> projectProjectconfig = action -> action.execute(project);
+                project.getExtensions().create("modrinthMetadata", ModrinthMetadataExtension.class, projectProjectconfig, projectComponents);
+            });
         } else {
             throw new IllegalArgumentException("Plugin must be applied to a project or settings object");
         }
