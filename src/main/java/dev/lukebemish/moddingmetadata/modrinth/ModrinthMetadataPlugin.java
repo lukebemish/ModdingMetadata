@@ -1,7 +1,5 @@
 package dev.lukebemish.moddingmetadata.modrinth;
 
-import dev.lukebemish.moddingmetadata.CapabilityFabricModJsonMavenVersionRule;
-import dev.lukebemish.moddingmetadata.CapabilitySameVersionRule;
 import dev.lukebemish.moddingmetadata.Identifier;
 import org.gradle.api.IsolatedAction;
 import org.gradle.api.Plugin;
@@ -9,14 +7,16 @@ import org.gradle.api.Project;
 import org.gradle.api.artifacts.component.ModuleComponentIdentifier;
 import org.gradle.api.artifacts.dsl.ComponentMetadataHandler;
 import org.gradle.api.initialization.Settings;
+import org.gradle.api.plugins.ExtensionAware;
 
 import java.util.List;
 import java.util.function.Consumer;
 
 public class ModrinthMetadataPlugin implements Plugin<Object> {
-    private record Entry(String slug, String name, Identifier identifier) {}
+    private record Entry(String name, Identifier identifier) {}
     private static final List<Entry> FABRIC_ENTRIES = List.of(
-            new Entry("fabric-api", "P7dR8mSH", new Identifier("net.fabricmc.fabric-api", "fabric-api"))
+            new Entry("fabric-api", new Identifier("net.fabricmc.fabric-api", "fabric-api")),
+            new Entry("P7dR8mSH", new Identifier("net.fabricmc.fabric-api", "fabric-api"))
     );
 
     @SuppressWarnings("UnstableApiUsage")
@@ -55,13 +55,7 @@ public class ModrinthMetadataPlugin implements Plugin<Object> {
             });
         });
 
-        FABRIC_ENTRIES.forEach(entry -> {
-            components.withModule("maven.modrinth:"+entry.slug, CapabilityFabricModJsonMavenVersionRule.class, rule -> {
-                rule.params(entry.identifier);
-            });
-            components.withModule("maven.modrinth:"+entry.name, CapabilityFabricModJsonMavenVersionRule.class, rule -> {
-                rule.params(entry.identifier);
-            });
-        });
+        var extension = ((ExtensionAware) target).getExtensions().create("modrinthMetadata", ModrinthMetadataExtension.class, projectConfig, components);
+        FABRIC_ENTRIES.forEach(entry -> extension.mapToMavenFabric(entry.name, entry.identifier.group(), entry.identifier.name()));
     }
 }
