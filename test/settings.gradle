@@ -1,0 +1,23 @@
+pluginManagement {
+    includeBuild("../")
+}
+
+dependencyResolutionManagement {
+    repositories {
+        exclusiveContent {
+            forRepository {
+                maven {
+                    name = "Modrinth"
+                    url = "https://api.modrinth.com/maven"
+                }
+            }
+            filter {
+                includeGroup "maven.modrinth"
+            }
+        }
+    }
+    
+    repositoriesMode = RepositoriesMode.FAIL_ON_PROJECT_REPOS
+}
+
+rootProject.name = 'moddingmetadata-test'

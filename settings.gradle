@@ -1,0 +1,23 @@
+pluginManagement {
+    repositories {
+        gradlePluginPortal()
+        maven { url 'https://maven.lukebemish.dev/releases/' }
+    }
+}
+
+plugins {
+    id 'dev.lukebemish.conventions' version '0.1.11'
+    id 'dev.lukebemish.managedversioning' version '1.2.23' apply false
+}
+
+dependencyResolutionManagement {
+    repositories {
+        mavenCentral()
+        gradlePluginPortal()
+    }
+    
+    repositoriesMode = RepositoriesMode.FAIL_ON_PROJECT_REPOS
+}
+
+rootProject.name = 'moddingmetadata'
+
