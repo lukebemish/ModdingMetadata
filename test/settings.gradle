@@ -15,8 +15,12 @@ dependencyResolutionManagement {
                 includeGroup "maven.modrinth"
             }
         }
+        maven {
+            name = "Fabric"
+            url = "https://maven.fabricmc.net/"
+        }
     }
-    
+
     repositoriesMode = RepositoriesMode.FAIL_ON_PROJECT_REPOS
 }
 
