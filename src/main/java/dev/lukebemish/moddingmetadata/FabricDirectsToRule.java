@@ -5,10 +5,13 @@ import org.gradle.api.artifacts.ComponentMetadataContext;
 import org.gradle.api.artifacts.ComponentMetadataRule;
 import org.gradle.api.artifacts.MutableVariantFilesMetadata;
 import org.gradle.api.artifacts.repositories.RepositoryResourceAccessor;
+import org.jetbrains.annotations.ApiStatus;
 
 import javax.inject.Inject;
+import java.util.Map;
 
 @CacheableRule
+@ApiStatus.Internal
 public abstract class FabricDirectsToRule implements ComponentMetadataRule {
     private final Identifier newLocation;
 
@@ -26,9 +29,13 @@ public abstract class FabricDirectsToRule implements ComponentMetadataRule {
         var name = context.getDetails().getId().getName();
         var oldVersion = context.getDetails().getId().getVersion();
 
-        newLocation.makeIntoDep(getRepositoryResourceAccessor(), action -> context.getDetails().allVariants(variant -> {
+        newLocation.fabricRecover(getRepositoryResourceAccessor(), identifier -> context.getDetails().allVariants(variant -> {
             variant.withFiles(MutableVariantFilesMetadata::removeAllFiles);
-            variant.withDependencies(action);
+            variant.withDependencies(deps -> deps.add(Map.of(
+                "group", identifier.identifier().group(),
+                "name", identifier.identifier().name(),
+                "version", identifier.version()
+            )));
         }), group, name, oldVersion);
     }
 }

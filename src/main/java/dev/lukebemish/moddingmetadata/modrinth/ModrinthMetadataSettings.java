@@ -1,7 +1,5 @@
 package dev.lukebemish.moddingmetadata.modrinth;
 
-import dev.lukebemish.moddingmetadata.FabricDirectsToRule;
-import dev.lukebemish.moddingmetadata.FabricProvidesRule;
 import dev.lukebemish.moddingmetadata.Identifier;
 import org.gradle.api.provider.MapProperty;
 

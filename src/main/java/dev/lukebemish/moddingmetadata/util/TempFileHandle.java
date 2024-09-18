@@ -11,7 +11,7 @@ public class TempFileHandle implements Closeable {
     private TempFileHandle(Path path) {
         this.path = path;
     }
-    
+
     public Path path() {
         return path;
     }
@@ -23,7 +23,7 @@ public class TempFileHandle implements Closeable {
     public static TempFileHandle createTempDirectory(String prefix) throws IOException {
         return new TempFileHandle(Files.createTempDirectory(prefix));
     }
-    
+
     private static void delete(Path path) throws IOException {
         if (Files.isDirectory(path)) {
             var exceptions = Files.list(path).map(file -> {

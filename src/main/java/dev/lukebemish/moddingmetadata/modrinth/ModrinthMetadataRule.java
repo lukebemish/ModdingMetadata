@@ -8,6 +8,7 @@ import org.gradle.api.artifacts.CacheableRule;
 import org.gradle.api.artifacts.ComponentMetadataContext;
 import org.gradle.api.artifacts.ComponentMetadataRule;
 import org.gradle.api.artifacts.repositories.RepositoryResourceAccessor;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.Contract;
 import org.jspecify.annotations.Nullable;
 
@@ -25,6 +26,7 @@ import java.util.HashSet;
 import java.util.Map;
 
 @CacheableRule
+@ApiStatus.Internal
 public abstract class ModrinthMetadataRule implements ComponentMetadataRule {
     private static final String USER_AGENT = "lukebemish/ModrinthGradleMetadata/"+ModrinthMetadataRule.class.getPackage().getImplementationVersion();
     private static final String MODRINTH_API = "https://api.modrinth.com/v2";
@@ -63,7 +65,6 @@ public abstract class ModrinthMetadataRule implements ComponentMetadataRule {
                 .setHeader("User-Agent", USER_AGENT)
                 .setHeader("Content-Type", "application/json")
                 .GET();
-        HttpClient client = HttpClient.newHttpClient();
 
         return client.sendAsync(request.build(), HttpResponse.BodyHandlers.ofString())
                 .thenApply(response -> {
@@ -169,8 +170,12 @@ public abstract class ModrinthMetadataRule implements ComponentMetadataRule {
                     }
                     if (fabricModuleMaps.containsKey(depProject) && finalDepVersion != null) {
                         boolean[] found = {false};
-                        fabricModuleMaps.get(depProject).makeIntoDep(getRepositoryAccessor(), action -> {
-                            action.execute(dependencies);
+                        fabricModuleMaps.get(depProject).fabricRecover(getRepositoryAccessor(), identifier -> {
+                            dependencies.add(Map.of(
+                                "group", identifier.identifier().group(),
+                                "name", identifier.identifier().name(),
+                                "version", identifier.version()
+                            ));
                             found[0] = true;
                         }, "maven.modrinth", depProject, finalDepVersion);
                         if (!found[0]) {
