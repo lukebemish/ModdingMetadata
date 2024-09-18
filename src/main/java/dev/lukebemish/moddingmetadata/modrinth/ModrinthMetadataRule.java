@@ -3,12 +3,15 @@ package dev.lukebemish.moddingmetadata.modrinth;
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import dev.lukebemish.moddingmetadata.Identifier;
 import org.gradle.api.artifacts.CacheableRule;
 import org.gradle.api.artifacts.ComponentMetadataContext;
 import org.gradle.api.artifacts.ComponentMetadataRule;
+import org.gradle.api.artifacts.repositories.RepositoryResourceAccessor;
 import org.jetbrains.annotations.Contract;
 import org.jspecify.annotations.Nullable;
 
+import javax.inject.Inject;
 import java.net.URI;
 import java.net.URLEncoder;
 import java.net.http.HttpClient;
@@ -19,6 +22,7 @@ import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 
 @CacheableRule
 public abstract class ModrinthMetadataRule implements ComponentMetadataRule {
@@ -27,7 +31,14 @@ public abstract class ModrinthMetadataRule implements ComponentMetadataRule {
     private static final Gson GSON = new Gson();
     private static final long[] nextResponseTime = {0};
     private static final HttpClient client = HttpClient.newHttpClient();
-    
+
+    private final Map<String, Identifier> fabricModuleMaps;
+
+    @Inject
+    public ModrinthMetadataRule(Map<String, Identifier> fabricModuleMaps) {
+        this.fabricModuleMaps = fabricModuleMaps;
+    }
+
     @Contract("_, _, false -> !null")
     private @Nullable JsonElement request(String path, JsonObject json, boolean allow404) {
         var rateLimitWait = Math.min(nextResponseTime[0] - System.currentTimeMillis(), 60_000);
@@ -53,7 +64,7 @@ public abstract class ModrinthMetadataRule implements ComponentMetadataRule {
                 .setHeader("Content-Type", "application/json")
                 .GET();
         HttpClient client = HttpClient.newHttpClient();
-        
+
         return client.sendAsync(request.build(), HttpResponse.BodyHandlers.ofString())
                 .thenApply(response -> {
                     if (allow404 && response.statusCode() == 404) {
@@ -84,16 +95,16 @@ public abstract class ModrinthMetadataRule implements ComponentMetadataRule {
                 })
                 .join();
     }
-    
+
     @Override
     public void execute(ComponentMetadataContext context) {
         if (!"maven.modrinth".equals(context.getDetails().getId().getGroup())) {
             return;
         }
-        
+
         var project = context.getDetails().getId().getName();
         var version = context.getDetails().getId().getVersion();
-        
+
         var path = "/project/"+project+"/version/"+version;
         var result = request(path, new JsonObject(), false).getAsJsonObject();
         var projectId = result.get("project_id").getAsString();
@@ -118,6 +129,7 @@ public abstract class ModrinthMetadataRule implements ComponentMetadataRule {
             }
             var depVersion = dependency.getAsJsonObject().get("version_id");
             var depProject = dependency.getAsJsonObject().get("project_id").getAsString();
+
             context.getDetails().withVariant("runtime", variant -> {
                 variant.withDependencies(dependencies -> {
                     var map = new HashMap<String, String>();
@@ -127,7 +139,7 @@ public abstract class ModrinthMetadataRule implements ComponentMetadataRule {
                     if (depVersion != null && !depVersion.isJsonNull()) {
                         finalDepVersion = depVersion.getAsString();
                     } else {
-                        var depProjectPath = "/project/"+depProject+"/version";
+                        var depProjectPath = "/project/" + depProject + "/version";
                         var parameters = new JsonObject();
                         parameters.add("game_versions", result.getAsJsonObject().get("game_versions"));
                         String foundVersion = null;
@@ -155,13 +167,29 @@ public abstract class ModrinthMetadataRule implements ComponentMetadataRule {
                         }
                         finalDepVersion = foundVersion;
                     }
-                    dependencies.add(map, dep -> dep.version(v -> {
-                        if (finalDepVersion != null) {
-                            v.prefer(finalDepVersion);
+                    if (fabricModuleMaps.containsKey(depProject) && finalDepVersion != null) {
+                        boolean[] found = {false};
+                        fabricModuleMaps.get(depProject).makeIntoDep(getRepositoryAccessor(), action -> {
+                            action.execute(dependencies);
+                            found[0] = true;
+                        }, "maven.modrinth", depProject, finalDepVersion);
+                        if (!found[0]) {
+                            dependencies.add(map, dep -> dep.version(v -> {
+                                v.prefer(finalDepVersion);
+                            }));
                         }
-                    }));
+                    } else {
+                        dependencies.add(map, dep -> dep.version(v -> {
+                            if (finalDepVersion != null) {
+                                v.prefer(finalDepVersion);
+                            }
+                        }));
+                    }
                 });
             });
         });
     }
+
+    @Inject
+    protected abstract RepositoryResourceAccessor getRepositoryAccessor();
 }

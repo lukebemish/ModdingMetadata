@@ -5,8 +5,8 @@ plugins {
 gradlePlugin {
     plugins {
         modrinthMetadata {
-            id = 'dev.lukebemish.moddingmetadata.modrinth'
-            implementationClass = 'dev.lukebemish.moddingmetadata.modrinth.ModrinthMetadataPlugin'
+            id = 'dev.lukebemish.moddingmetadata'
+            implementationClass = 'dev.lukebemish.moddingmetadata.ModdingMetadataPlugin'
         }
     }
 }
