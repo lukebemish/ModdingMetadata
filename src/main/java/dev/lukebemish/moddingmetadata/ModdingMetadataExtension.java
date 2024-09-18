@@ -63,5 +63,12 @@ public abstract class ModdingMetadataExtension {
         settings.getFabricModuleEquivalences().get().forEach((slugOrId, to) -> components.withModule("maven.modrinth:"+slugOrId, FabricProvidesRule.class, rule -> {
             rule.params(new Identifier(to.group(), to.name()));
         }));
+        settings.getModuleEquivalences().get().forEach((slugOrId, to) -> components.withModule("maven.modrinth:"+slugOrId, details -> {
+            details.allVariants(variant -> {
+                variant.withCapabilities(capabilities -> {
+                    capabilities.addCapability(to.group(), to.name(), details.getId().getVersion());
+                });
+            });
+        }));
     }
 }
