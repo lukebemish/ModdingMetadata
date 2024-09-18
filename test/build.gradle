@@ -3,9 +3,7 @@ plugins {
     id 'dev.lukebemish.moddingmetadata'
 }
 
-moddingMetadata.modrinth {
-
-}
+moddingMetadata.modrinth()
 
 dependencies {
     // This mod (ad astra) has a good number of transitive dependencies so it's a good one to test with
@@ -13,10 +11,7 @@ dependencies {
     // And this one (MI) declares embedded deps
     implementation 'maven.modrinth:Gov5Dboq:18Bcl0A4'
     // And to test interaction with "normal" deps:
-    implementation 'net.fabricmc.fabric-api:fabric-api:0.104.0+1.21.1'
-
-    // net.fabricmc:fabric-api:fabric-api:0.95.3+1.20.4
-    // net.fabricmc.fabric-api:fabric-api:0.104.0+1.21.1
+    implementation 'net.fabricmc.fabric-api:fabric-api:0.91.6+1.20.2'
 }
 
 tasks.register('copyRuntimeLibs', Copy) {
